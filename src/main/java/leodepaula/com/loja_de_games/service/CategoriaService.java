@@ -35,7 +35,7 @@ public class CategoriaService {
     }
 
     public Mono<Void> atualizarCategoria(Categoria categoria) {
-        return buscarPorId(categoria.getId()) // garante que existe
+        return buscarPorId(categoria.getId())
                 .flatMap(existing -> categoriaRepository.save(categoria)).then();
     }
 

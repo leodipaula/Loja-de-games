@@ -19,31 +19,16 @@ public class ProdutoService {
     private final CategoriaRepository categoriaRepository;
 
     public Mono<ProdutoComCategoriaDTO> buscarProdutoComCategoriaById(Long idProduto) {
-        return produtoRepository.findById(idProduto).flatMap(produto -> categoriaRepository
-                .findById(produto.getCategoriaId())
-                .map(categoria -> new ProdutoComCategoriaDTO(produto.getId(), produto.getNome(),
-                        produto.getPreco(), produto.getDescricao(), produto.getMarca(),
-                        produto.getQuantidade(), produto.getDataCriacao(), categoria.getId(),
-                        categoria.getNome(), categoria.getDescricao())));
+        return findById(idProduto).flatMap(this::mapToProdutoComCategoriaDTO);
     }
 
     public Flux<ProdutoComCategoriaDTO> buscarTodosProdutosComCategoria() {
-        return produtoRepository.findAll().flatMap(produto -> categoriaRepository
-                .findById(produto.getCategoriaId())
-                .map(categoria -> new ProdutoComCategoriaDTO(produto.getId(), produto.getNome(),
-                        produto.getPreco(), produto.getDescricao(), produto.getMarca(),
-                        produto.getQuantidade(), produto.getDataCriacao(), categoria.getId(),
-                        categoria.getNome(), categoria.getDescricao())));
+        return produtoRepository.findAll().flatMap(this::mapToProdutoComCategoriaDTO);
     }
 
     public Flux<ProdutoComCategoriaDTO> buscarProdutoByNome(String nome) {
         return produtoRepository.findByNomeContainingIgnoringCase(nome)
-                .flatMap(produto -> categoriaRepository.findById(produto.getCategoriaId())
-                        .map(categoria -> new ProdutoComCategoriaDTO(produto.getId(),
-                                produto.getNome(), produto.getPreco(), produto.getDescricao(),
-                                produto.getMarca(), produto.getQuantidade(),
-                                produto.getDataCriacao(), categoria.getId(), categoria.getNome(),
-                                categoria.getDescricao())))
+                .flatMap(this::mapToProdutoComCategoriaDTO)
                 .switchIfEmpty(monoResponseStatusNotFoundException());
     }
 
@@ -51,13 +36,32 @@ public class ProdutoService {
         return produtoRepository.save(produto);
     }
 
-    public Mono<Void> update(Produto produto) {
-        return findById(produto.getId()).flatMap(existing -> produtoRepository.save(produto))
+    public Mono<Void> update(ProdutoComCategoriaDTO dto) {
+        return findById(dto.id())
+                .then(categoriaRepository.findById(dto.categoriaId())
+                        .switchIfEmpty(Mono.error(new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST, "Categoria não encontrada"))))
+                .then(produtoRepository.save(
+                        new Produto(dto.id(), dto.nome(), dto.preco(), dto.marca(), dto.descricao(),
+                                dto.quantidade(), dto.dataCriacao(), dto.categoriaId())))
                 .then();
     }
 
+
     public Mono<Produto> findById(Long id) {
         return produtoRepository.findById(id).switchIfEmpty(monoResponseStatusNotFoundException());
+    }
+
+    public Mono<Void> delete(Long id) {
+        return findById(id).flatMap(produtoRepository::delete);
+    }
+
+    private Mono<ProdutoComCategoriaDTO> mapToProdutoComCategoriaDTO(Produto produto) {
+        return categoriaRepository.findById(produto.getCategoriaId())
+                .map(categoria -> new ProdutoComCategoriaDTO(produto.getId(), produto.getNome(),
+                        produto.getPreco(), produto.getDescricao(), produto.getMarca(),
+                        produto.getQuantidade(), produto.getDataCriacao(), categoria.getId(),
+                        categoria.getNome(), categoria.getDescricao()));
     }
 
     public <T> Mono<T> monoResponseStatusNotFoundException() {

@@ -40,13 +40,14 @@ public class CategoriaController {
     }
 
     @PutMapping
-    public Mono<ResponseEntity<Void>> atualizar(@Valid @RequestBody Categoria categoria) {
-        return categoriaService.atualizarCategoria(categoria)
-                .thenReturn(ResponseEntity.noContent().build());
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> atualizar(@Valid @RequestBody Categoria categoria) {
+        return categoriaService.atualizarCategoria(categoria);
     }
 
     @DeleteMapping("/{id}")
-    public Mono<ResponseEntity<Void>> deletar(@PathVariable Long id) {
-        return categoriaService.deletarCategoria(id).thenReturn(ResponseEntity.noContent().build());
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> deletar(@PathVariable Long id) {
+        return categoriaService.deletarCategoria(id);
     }
 }

@@ -27,10 +27,9 @@ import reactor.core.publisher.Mono;
 @Order(-2)
 public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
 
-    public GlobalExceptionHandler(ErrorAttributes errorAttributes,
-            WebProperties.Resources resourceProperties, ApplicationContext applicationContext,
-            ServerCodecConfigurer codecConfigurer) {
-        super(errorAttributes, resourceProperties, applicationContext);
+    public GlobalExceptionHandler(ErrorAttributes errorAttributes, WebProperties webProperties,
+            ApplicationContext applicationContext, ServerCodecConfigurer codecConfigurer) {
+        super(errorAttributes, webProperties.getResources(), applicationContext);
         this.setMessageWriters(codecConfigurer.getWriters());
     }
 
@@ -40,7 +39,6 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
     }
 
     private Mono<ServerResponse> formatErrorResponse(ServerRequest request) {
-        // String query = request.uri().getQuery();
         ErrorAttributeOptions errorAttributeOptions =
                 isTraceEnabled(request) ? of(Include.STACK_TRACE) : defaults();
 
@@ -49,8 +47,4 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
         return ServerResponse.status(status).contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(errorAttributesMap));
     }
-
-    // private boolean isTraceEnabled(String query) {
-    // return StringUtils.hasLength(query) && query.contains("trace=true");
-    // }
 }
